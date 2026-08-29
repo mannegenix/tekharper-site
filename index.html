@@ -856,7 +856,7 @@
         <div class="err">Let us know what you need help with.</div>
       </div>
       <button type="submit" class="neo-btn amber form-submit">Send Message →</button>
-      <div class="form-note">Submitting opens a pre-filled email to info@tekharper.com until a form backend is connected — see the design document.</div>
+      <div class="form-note">Submitting opens a pre-filled email to info@tekharper.com — just hit send from your email client.</div>
     </form>
 
     <div class="form-success" id="formSuccess">
@@ -1060,11 +1060,24 @@
           document.body.classList.toggle('on-dark-panel', en.target.dataset.dark === 'true');
         }
       });
-    }, {threshold:0.5});
+    // threshold is a FRACTION OF THE TARGET'S OWN HEIGHT, not the viewport — with a
+    // short section that's fine, but #panel-services grew far taller than one screen
+    // once every card shows full detail on mobile too, so 50% of its height could
+    // never be visible at once and this observer would never fire for it, leaving the
+    // nav permanently un-highlighted while scrolled through Services. A center-band
+    // rootMargin makes "current section" independent of how tall the section is.
+    }, {threshold:0, rootMargin:'-45% 0px -45% 0px'});
     panels.forEach(p=>io.observe(p));
 
     // staggered fade/slide-in reveal for each section's content as it scrolls into view
-    // (mobile/tablet only — desktop keeps its own hijacked panel/layer transitions)
+    // (mobile/tablet only — desktop keeps its own hijacked panel/layer transitions).
+    // Same fix as above: threshold used to be a fraction of the target's OWN height
+    // (0.18), which is unreachable once a section is much taller than the viewport —
+    // #panel-services (now ~3750px tall on a single-column phone layout, once every
+    // card shows full detail) could never hit 18% of itself on a normal phone screen,
+    // so `.is-revealed` never got added and the whole section stayed opacity:0 —
+    // invisible. threshold:0 + a rootMargin fires as soon as the section starts
+    // entering the viewport, independent of the section's own height.
     const revealIo = new IntersectionObserver((entries)=>{
       if(isDesktopLayout()) return;
       entries.forEach(en=>{
@@ -1073,7 +1086,7 @@
           revealIo.unobserve(en.target);
         }
       });
-    }, {threshold:0.18, rootMargin:'0px 0px -8% 0px'});
+    }, {threshold:0, rootMargin:'0px 0px -10% 0px'});
     panels.forEach(p=>{
       if(p.id === 'panel-hero'){ p.classList.add('is-revealed'); return; }
       revealIo.observe(p);
